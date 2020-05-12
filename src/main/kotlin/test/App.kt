@@ -11,11 +11,10 @@ import java.sql.SQLException
 
 
 fun main(args: Array<String>) {
-    println("Hello, World!")
 
     val jdbi: Jdbi = Jdbi.create("jdbc:hsqldb:mem:testDB", "sa", "")
 
-    jdbi.useHandle<RuntimeException> { handle: Handle ->
+    jdbi.useHandle<SQLException> { handle: Handle ->
         handle.execute("create table students (id int primary key, name varchar(100))")
         handle.execute("insert into students (id, name) values (?, ?)", 1, "Alice")
         handle.execute("insert into students (id, name) values (?, ?)", 2, "Bob")
@@ -30,8 +29,9 @@ fun main(args: Array<String>) {
     println(names)
 
     // select with custom Row Mapper
+    // TODO try moving to separate class
     val students: List<Student> = jdbi.withHandle<List<Student>, SQLException> { handle: Handle ->
-        handle.createQuery("SELECT id, name FROM students ORDER BY id ASC")
+        handle.createQuery("SELECT id, name FROM students")
                 .map({ rs: ResultSet, ctx -> Student(rs.getInt("id"), rs.getString("name")) })
                 .list()
     }
@@ -43,7 +43,6 @@ fun main(args: Array<String>) {
                 .mapToBean(Student::class.java)
                 .list()
     }
-
     println(studentModels)
 
 }
